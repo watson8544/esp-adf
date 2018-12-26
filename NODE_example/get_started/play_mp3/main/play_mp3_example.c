@@ -7,6 +7,9 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+/*
+    For NODE Module supplied by M5Stack
+ */
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,6 +25,8 @@
 #include "audio_hal.h"
 #include "filter_resample.h"
 #include "zl38063.h"
+
+#define CONFIG_ESP_M5CORE_NODE_BOARD 1
 
 static const char *TAG = "PLAY_MP3_FLASH";
 /*
@@ -64,7 +69,11 @@ void app_main(void)
     audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_ZL38063_DEFAULT();
     audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 2);
 #endif
-    audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+#if CONFIG_ESP_M5CORE_NODE_BOARD
+    audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_WM8978_DEFAULT();//for NODE Module supplied by M5Stack
+    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 3);
+#endif
+    // audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[ 2 ] Create audio pipeline, add all elements to pipeline, and subscribe pipeline event");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
