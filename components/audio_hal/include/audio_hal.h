@@ -61,6 +61,18 @@ typedef struct audio_hal* audio_hal_handle_t;
         },                                              \
 };
 
+#define AUDIO_HAL_WM8978_DEFAULT(){                     \
+        .adc_input  = AUDIO_HAL_ADC_INPUT_LINE1,        \
+        .dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1,       \
+        .codec_mode = AUDIO_HAL_CODEC_MODE_BOTH,        \
+        .i2s_iface = {                                  \
+            .mode = AUDIO_HAL_MODE_SLAVE,               \
+            .fmt = AUDIO_HAL_I2S_NORMAL,                \
+            .samples = AUDIO_HAL_48K_SAMPLES,           \
+            .bits = AUDIO_HAL_BIT_LENGTH_16BITS,        \
+        },                                              \
+};
+
 /**
  * @brief Select media hal codec mode
  */
