@@ -5,15 +5,11 @@ An :doc:`Audio Element <../framework/audio_element>` responsible for acquiring o
 
 The following stream types are supported:
 
-+----------------------+----------------------+
-| Stream Name          | Stream Type          |
-+======================+======================+
-| I2S                  | Reader / Writer      |
-+----------------------+----------------------+
-| HTTP                 | Reader / Writer      |
-+----------------------+----------------------+
-| FatFs                | Reader / Writer      |
-+----------------------+----------------------+
+* `I2S Stream`_
+* `HTTP Stream`_
+* `FatFs Stream`_
+* `Raw Stream`_
+* `Spiffs Stream`_
 
 To set the stream type, use provided structure, e.g. :cpp:type:`i2s_stream_cfg_t` for I2S stream, together with :cpp:type:`audio_stream_type_t` enumerator.
 
@@ -49,3 +45,19 @@ FatFs Stream
 ------------
 
 .. include:: /_build/inc/fatfs_stream.inc
+
+
+.. _api-reference-stream_raw:
+
+Raw Stream
+----------
+
+.. include:: /_build/inc/raw_stream.inc
+
+
+.. _api-reference-stream_spiffs:
+
+Spiffs Stream
+-------------
+
+.. include:: /_build/inc/spiffs_stream.inc

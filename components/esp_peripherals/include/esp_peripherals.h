@@ -25,10 +25,10 @@
 #ifndef _ESP_PERIPHERALS_H_
 #define _ESP_PERIPHERALS_H_
 
-#include "freertos/event_groups.h"
 #include "audio_error.h"
 #include "audio_event_iface.h"
 #include "audio_common.h"
+#include "freertos/event_groups.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,16 +38,19 @@ extern "C" {
  * @brief Peripheral Identify, this must be unique for each peripheral added to the peripherals list
  */
 typedef enum {
-    PERIPH_ID_BUTTON    = AUDIO_ELEMENT_TYPE_PERIPH + 1,
-    PERIPH_ID_TOUCH     = AUDIO_ELEMENT_TYPE_PERIPH + 2,
-    PERIPH_ID_SDCARD    = AUDIO_ELEMENT_TYPE_PERIPH + 3,
-    PERIPH_ID_WIFI      = AUDIO_ELEMENT_TYPE_PERIPH + 4,
-    PERIPH_ID_FLASH     = AUDIO_ELEMENT_TYPE_PERIPH + 5,
-    PERIPH_ID_AUXIN     = AUDIO_ELEMENT_TYPE_PERIPH + 6,
-    PERIPH_ID_ADC       = AUDIO_ELEMENT_TYPE_PERIPH + 7,
-    PERIPH_ID_CONSOLE   = AUDIO_ELEMENT_TYPE_PERIPH + 8,
-    PERIPH_ID_BLUETOOTH = AUDIO_ELEMENT_TYPE_PERIPH + 9,
-    PERIPH_ID_LED       = AUDIO_ELEMENT_TYPE_PERIPH + 10,
+    PERIPH_ID_BUTTON     = AUDIO_ELEMENT_TYPE_PERIPH + 1,
+    PERIPH_ID_TOUCH      = AUDIO_ELEMENT_TYPE_PERIPH + 2,
+    PERIPH_ID_SDCARD     = AUDIO_ELEMENT_TYPE_PERIPH + 3,
+    PERIPH_ID_WIFI       = AUDIO_ELEMENT_TYPE_PERIPH + 4,
+    PERIPH_ID_FLASH      = AUDIO_ELEMENT_TYPE_PERIPH + 5,
+    PERIPH_ID_AUXIN      = AUDIO_ELEMENT_TYPE_PERIPH + 6,
+    PERIPH_ID_ADC        = AUDIO_ELEMENT_TYPE_PERIPH + 7,
+    PERIPH_ID_CONSOLE    = AUDIO_ELEMENT_TYPE_PERIPH + 8,
+    PERIPH_ID_BLUETOOTH  = AUDIO_ELEMENT_TYPE_PERIPH + 9,
+    PERIPH_ID_LED        = AUDIO_ELEMENT_TYPE_PERIPH + 10,
+    PERIPH_ID_SPIFFS     = AUDIO_ELEMENT_TYPE_PERIPH + 11,
+    PERIPH_ID_ADC_BTN    = AUDIO_ELEMENT_TYPE_PERIPH + 12,
+    PERIPH_ID_IS31FL3216 = AUDIO_ELEMENT_TYPE_PERIPH + 13,
 } esp_periph_id_t;
 
 /**

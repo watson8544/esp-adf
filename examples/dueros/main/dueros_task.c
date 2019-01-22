@@ -127,26 +127,29 @@ static void duer_que_send(void *que, duer_task_cmd_t type, void *data, int index
 void rec_engine_cb(rec_event_type_t type, void *user_data)
 {
     if (REC_EVENT_WAKEUP_START == type) {
-        ESP_LOGI(TAG, "--- rec_engine_cb --- REC_EVENT_WAKEUP_START");
+        ESP_LOGI(TAG, "rec_engine_cb - REC_EVENT_WAKEUP_START");
         if (duer_state == DUER_STATE_START) {
             return;
         }
+        if (duer_audio_wrapper_get_state() == AUDIO_STATUS_RUNNING) {
+            duer_audio_wrapper_pause();
+        }
         led_indicator_set(0, led_work_mode_turn_on);
     } else if (REC_EVENT_VAD_START == type) {
-        ESP_LOGI(TAG, "--- rec_engine_cb --- REC_EVENT_VAD_START");
+        ESP_LOGI(TAG, "rec_engine_cb - REC_EVENT_VAD_START");
         duer_que_send(duer_que, DUER_CMD_START, NULL, 0, 0, 0);
     } else if (REC_EVENT_VAD_STOP == type) {
         if (duer_state == DUER_STATE_START) {
             duer_que_send(duer_que, DUER_CMD_STOP, NULL, 0, 0, 0);
             led_indicator_set(0, led_work_mode_turn_off);
         }
-        ESP_LOGI(TAG, "--- rec_engine_cb --- REC_EVENT_VAD_STOP, state:%d", duer_state);
+        ESP_LOGI(TAG, "rec_engine_cb - REC_EVENT_VAD_STOP, state:%d", duer_state);
     } else if (REC_EVENT_WAKEUP_END == type) {
         if (duer_state == DUER_STATE_START) {
             duer_que_send(duer_que, DUER_CMD_STOP, NULL, 0, 0, 0);
         }
         led_indicator_set(0, led_work_mode_turn_off);
-        ESP_LOGI(TAG, "--- rec_engine_cb --- REC_EVENT_WAKEUP_END");
+        ESP_LOGI(TAG, "rec_engine_cb - REC_EVENT_WAKEUP_END");
     } else {
 
     }
@@ -252,7 +255,7 @@ static esp_err_t recorder_pipeline_open(void **handle)
 
 static esp_err_t recorder_pipeline_read(void *handle, char *data, int data_size)
 {
-    raw_stream_read(data, data_size);
+    raw_stream_read(audio_pipeline_get_el_by_tag((audio_pipeline_handle_t)handle, "raw"), data, data_size);
     return ESP_OK;
 }
 
@@ -396,7 +399,6 @@ esp_err_t periph_callback(audio_event_iface_msg_t *event, void *context)
                            ((event->cmd == PERIPH_BUTTON_RELEASE) || (event->cmd == PERIPH_BUTTON_LONG_RELEASE))) {
                     ESP_LOGI(TAG, "PERIPH_NOTIFY_KEY_REC_QUIT");
                 }
-
                 break;
             }
         case PERIPH_ID_TOUCH: {
@@ -486,6 +488,7 @@ void duer_service_create(void)
     esp_periph_handle_t button_handle = periph_button_init(&btn_cfg);
     esp_periph_start(button_handle);
 
+    // If enable the touch will take a lot of cpu.
     periph_touch_cfg_t touch_cfg = {
         .touch_mask = TOUCH_PAD_SEL4 | TOUCH_PAD_SEL7 | TOUCH_PAD_SEL8 | TOUCH_PAD_SEL9,
         .tap_threshold_percent = 70,
