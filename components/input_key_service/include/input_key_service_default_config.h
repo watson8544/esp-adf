@@ -59,6 +59,32 @@ typedef enum {
     }                                   \
 }
 
+#elif CONFIG_ESP_M5CORE_NODE_BOARD
+
+#define INPUT_KEY_NUM  3
+
+#define INPUT_REC_ID            0
+#define INPUT_SET_ID            1
+#define INPUT_PLAY_ID           2
+
+#define INPUT_KEY_DEFAULT_INFO() {      \
+    {                                   \
+        .type = PERIPH_ID_BUTTON,      \
+        .user_id = USER_ID_REC,         \
+        .act_id = INPUT_REC_ID,         \
+    },                                  \
+    {                                   \
+        .type = PERIPH_ID_BUTTON,      \
+        .user_id = USER_ID_SET,        \
+        .act_id = INPUT_SET_ID,        \
+    },                                  \
+    {                                   \
+        .type = PERIPH_ID_BUTTON,      \
+        .user_id = USER_ID_PLAY,         \
+        .act_id = INPUT_PLAY_ID,         \
+    }                                  \
+}
+
 #elif (CONFIG_ESP_LYRATD_MSC_V2_1_BOARD || CONFIG_ESP_LYRATD_MSC_V2_2_BOARD)
 
 #define INPUT_KEY_NUM  6

@@ -45,6 +45,15 @@ static periph_service_handle_t test_input_key_service_create()
     TEST_ASSERT_FALSE(esp_periph_start(set, touch_handle));
 #endif
 
+#if CONFIG_ESP_M5CORE_NODE_BOARD
+    periph_button_cfg_t btn_cfg = {
+        .gpio_mask = (1ULL << get_input_rec_id()) | (1ULL << get_input_set_id()) | (1ULL << get_input_play_id()),
+    };
+    esp_periph_handle_t button_handle = periph_button_init(&btn_cfg);
+    TEST_ASSERT_NOT_NULL(button_handle);
+    TEST_ASSERT_FALSE(esp_periph_start(set, button_handle));
+#endif
+
 #if (CONFIG_ESP_LYRATD_MSC_V2_1_BOARD || CONFIG_ESP_LYRATD_MSC_V2_2_BOARD)
     periph_adc_button_cfg_t adc_btn_cfg = {0};
     adc_arr_t adc_btn_tag = ADC_DEFAULT_ARR();

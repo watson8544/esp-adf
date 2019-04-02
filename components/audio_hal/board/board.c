@@ -41,7 +41,8 @@ audio_board_handle_t audio_board_init(void)
     board_handle = (audio_board_handle_t) audio_calloc(1, sizeof(audio_hal_handle_t));
     AUDIO_MEM_CHECK(TAG, board_handle, return NULL);
 
-    board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_DEFAULT_HANDLE);
+    board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_WM8978_HANDLE);
+    // board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_DEFAULT_HANDLE);
 
     return board_handle;
 }

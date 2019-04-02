@@ -57,15 +57,6 @@ audio_hal_func_t AUDIO_CODEC_DEFAULT_HANDLE = {
     .audio_codec_get_volume = es8374_codec_get_voice_volume,
 };
 
-audio_hal_func_t AUDIO_CODEC_WM8978_HANDLE = {
-    .audio_codec_initialize = wm8978_init,
-    .audio_codec_deinitialize = wm8978_deinit,
-    .audio_codec_ctrl = wm8978_ctrl_state,
-    .audio_codec_config_iface = wm8978_config_i2s,
-    .audio_codec_set_volume = wm8978_set_voice_volume,
-    .audio_codec_get_volume = wm8978_get_voice_volume,
-};
-
 static bool es8374_codec_initialized()
 {
     return codec_init_flag;
