@@ -20,7 +20,7 @@
 #include "audio_pipeline.h"
 #include "audio_event_iface.h"
 #include "audio_common.h"
-#include "audio_hal.h"
+#include "board.h"
 #include "http_stream.h"
 #include "i2s_stream.h"
 #include "wav_encoder.h"
@@ -109,8 +109,8 @@ void app_main(void)
 
     ESP_LOGI(TAG, "[ 1 ] Initialize Button Peripheral & Connect to wifi network");
     // Initialize peripherals management
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PHERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     periph_wifi_cfg_t wifi_cfg = {
         .ssid = CONFIG_WIFI_SSID,
@@ -125,16 +125,14 @@ void app_main(void)
     esp_periph_handle_t button_handle = periph_button_init(&btn_cfg);
 
     // Start wifi & button peripheral
-    esp_periph_start(button_handle);
-    esp_periph_start(wifi_handle);
+    esp_periph_start(set, button_handle);
+    esp_periph_start(set, wifi_handle);
     periph_wifi_wait_for_connected(wifi_handle, portMAX_DELAY);
 
 
     ESP_LOGI(TAG, "[ 2 ] Start codec chip");
-    audio_hal_codec_config_t audio_hal_codec_cfg =  AUDIO_HAL_ES8388_DEFAULT();
-    audio_hal_codec_cfg.i2s_iface.samples = AUDIO_HAL_16K_SAMPLES;
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 0);
-    audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_ENCODE, AUDIO_HAL_CTRL_START);
+    audio_board_handle_t board_handle = audio_board_init();
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_ENCODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[3.0] Create audio pipeline for recording");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
@@ -160,7 +158,7 @@ void app_main(void)
     ESP_LOGI(TAG, "[3.4] Link it together [codec_chip]-->i2s_stream->http_stream-->[http_server]");
     audio_pipeline_link(pipeline, (const char *[]) {"i2s", "http"}, 2);
 
-    ESP_LOGI(TAG, "[ 4 ] Setup event listener");
+    ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
     audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
     audio_event_iface_handle_t evt = audio_event_iface_init(&evt_cfg);
 
@@ -168,7 +166,7 @@ void app_main(void)
     audio_pipeline_set_listener(pipeline, evt);
 
     ESP_LOGI(TAG, "[4.2] Listening event from peripherals");
-    audio_event_iface_set_listener(esp_periph_get_event_iface(), evt);
+    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
 
     i2s_stream_set_clk(i2s_stream_reader, 16000, 16, 2);
 
@@ -218,8 +216,8 @@ void app_main(void)
     audio_pipeline_remove_listener(pipeline);
 
     /* Stop all periph before removing the listener */
-    esp_periph_stop_all();
-    audio_event_iface_remove_listener(esp_periph_get_event_iface(), evt);
+    esp_periph_set_stop_all(set);
+    audio_event_iface_remove_listener(esp_periph_set_get_event_iface(set), evt);
 
     /* Make sure audio_pipeline_remove_listener & audio_event_iface_remove_listener are called before destroying event_iface */
     audio_event_iface_destroy(evt);
@@ -228,5 +226,5 @@ void app_main(void)
     audio_pipeline_deinit(pipeline);
     audio_element_deinit(http_stream_writer);
     audio_element_deinit(i2s_stream_reader);
-    esp_periph_destroy();
+    esp_periph_set_destroy(set);
 }

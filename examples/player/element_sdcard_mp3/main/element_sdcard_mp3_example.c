@@ -13,12 +13,12 @@
 #include "esp_log.h"
 #include "audio_element.h"
 #include "audio_event_iface.h"
-#include "audio_hal.h"
 #include "i2s_stream.h"
 #include "mp3_decoder.h"
 #include "esp_peripherals.h"
 #include "periph_sdcard.h"
 #include "ringbuf.h"
+#include "board.h"
 
 static const char *TAG = "PIPELINE_PARTIAL_EXAMPLE";
 
@@ -51,27 +51,26 @@ void app_main(void)
 
     ESP_LOGI(TAG, "[ 1 ] Mount sdcard");
     // Initialize peripherals management
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PHERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     // Initialize SD Card peripheral
     periph_sdcard_cfg_t sdcard_cfg = {
         .root = "/sdcard",
-        .card_detect_pin = SD_CARD_INTR_GPIO, //GPIO_NUM_34
+        .card_detect_pin = get_sdcard_intr_gpio(), //GPIO_NUM_34
     };
     esp_periph_handle_t sdcard_handle = periph_sdcard_init(&sdcard_cfg);
     // Start sdcard & button peripheral
-    esp_periph_start(sdcard_handle);
+    esp_periph_start(set, sdcard_handle);
 
-    // Wait until sdcard was mounted
+    // Wait until sdcard is mounted
     while (!periph_sdcard_is_mounted(sdcard_handle)) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     ESP_LOGI(TAG, "[ 2 ] Start codec chip");
-    audio_hal_codec_config_t audio_hal_codec_cfg =  AUDIO_HAL_ES8388_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 0);
-    audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+    audio_board_handle_t board_handle = audio_board_init();
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[3.0] Create i2s stream to write data to codec chip");
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT();
@@ -110,7 +109,7 @@ void app_main(void)
         xQueueReceive(queue_set_member, &msg, portMAX_DELAY);
 
         if (msg.source_type == AUDIO_ELEMENT_TYPE_ELEMENT && msg.source == (void *) mp3_decoder
-                && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
+            && msg.cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
             audio_element_info_t music_info = {0};
             audio_element_getinfo(mp3_decoder, &music_info);
 

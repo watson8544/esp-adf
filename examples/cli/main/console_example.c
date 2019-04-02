@@ -17,7 +17,7 @@
 #include "sdkconfig.h"
 #include "audio_element.h"
 #include "audio_mem.h"
-#include "audio_hal.h"
+#include "board.h"
 #include "audio_common.h"
 #include "fatfs_stream.h"
 #include "raw_stream.h"
@@ -38,11 +38,14 @@
 #include "aac_decoder.h"
 #include "http_stream.h"
 #include "wav_encoder.h"
+#include "display_service.h"
+#include "led_bar_is31x.h"
 
 #define  ESP_AUDIO_AUTO_PLAY
 
 static const char *TAG = "CONSOLE_EXAMPLE";
 static esp_audio_handle_t player;
+static esp_periph_set_handle_t set;
 
 int _http_stream_event_handle(http_stream_event_msg_t *msg)
 {
@@ -185,6 +188,44 @@ static esp_err_t wifi_info(esp_periph_handle_t periph, int argc, char *argv[])
     return ESP_OK;
 }
 
+static esp_err_t led(esp_periph_handle_t periph, int argc, char *argv[])
+{
+    static display_service_handle_t disp_led_serv = NULL;
+    if (disp_led_serv == NULL) {
+        esp_periph_handle_t led_bar = led_bar_is31x_init();
+        if (led_bar == NULL) {
+            ESP_LOGE(TAG, "led_bar handle create failed, this command only support lyrat-msc board");
+            return ESP_FAIL;
+        }
+        display_service_config_t display = {
+            .based_cfg = {
+                .task_stack = 0,
+                .task_prio  = 0,
+                .task_core  = 0,
+                .task_func  = NULL,
+                .service_start = NULL,
+                .service_stop = NULL,
+                .service_destroy = NULL,
+                .service_ioctl = led_bar_is31x_pattern,
+                .service_name = "DISPLAY_LED_BAR",
+                .user_data = NULL,
+            },
+            .instance = led_bar,
+        };
+        disp_led_serv = display_service_create(&display);
+    }
+    int cur_vol = 0;
+    if (argc == 1) {
+        cur_vol = atoi(argv[0]);
+    } else {
+        ESP_LOGE(TAG, "Invalid volume parameter, %d", argc);
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGI(TAG, "Set display pattern %d", cur_vol);
+    display_service_set_pattern(disp_led_serv, cur_vol, 0);
+    return ESP_OK;
+}
+
 static esp_err_t sys_reset(esp_periph_handle_t periph, int argc, char *argv[])
 {
     esp_restart();
@@ -217,6 +258,7 @@ static esp_err_t task_list(esp_periph_handle_t periph, int argc, char *argv[])
 }
 #endif
 
+
 const periph_console_cmd_t cli_cmd[] = {
     /* ======================== Esp_audio ======================== */
     { .cmd = "play",        .id = 1, .help = "Play music",               .func = cli_play },
@@ -230,6 +272,9 @@ const periph_console_cmd_t cli_cmd[] = {
     /* ======================== Wi-Fi ======================== */
     { .cmd = "join",        .id = 20, .help = "Join WiFi AP as a station",      .func = wifi_set },
     { .cmd = "wifi",        .id = 21, .help = "Get connected AP information",   .func = wifi_info },
+
+    /* ======================== Led bar ======================== */
+    { .cmd = "led",         .id = 1,  .help = "Lyrat-MSC led bar pattern", .func = led },
 
     /* ======================== System ======================== */
     { .cmd = "reboot",      .id = 30, .help = "Reboot system",            .func = sys_reset },
@@ -256,15 +301,13 @@ static void esp_audio_state_task (void *para)
 static void cli_setup_wifi()
 {
     ESP_LOGI(TAG, "Start Wi-Fi");
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
     periph_wifi_cfg_t wifi_cfg = {
         .disable_auto_reconnect = true,
         .ssid = "",
         .password = "",
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
-    esp_periph_start(wifi_handle);
+    esp_periph_start(set, wifi_handle);
 }
 
 static void cli_setup_sdcard()
@@ -272,10 +315,10 @@ static void cli_setup_sdcard()
     ESP_LOGI(TAG, "Start SdCard");
     periph_sdcard_cfg_t sdcard_cfg = {
         .root = "/sdcard",
-        .card_detect_pin = SD_CARD_INTR_GPIO, // GPIO_NUM_34
+        .card_detect_pin = get_sdcard_intr_gpio(), // GPIO_NUM_34
     };
     esp_periph_handle_t sdcard_handle = periph_sdcard_init(&sdcard_cfg);
-    esp_periph_start(sdcard_handle);
+    esp_periph_start(set, sdcard_handle);
 
     while (!periph_sdcard_is_mounted(sdcard_handle)) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -290,7 +333,7 @@ static void cli_setup_console()
         .commands = cli_cmd,
     };
     esp_periph_handle_t console_handle = periph_console_init(&console_cfg);
-    esp_periph_start(console_handle);
+    esp_periph_start(set, console_handle);
 }
 
 static void cli_setup_player(void)
@@ -305,10 +348,12 @@ static void cli_setup_player(void)
         .resample_rate = 0,
         .hal = NULL,
     };
-    audio_hal_codec_config_t audio_hal_codec_cfg =  AUDIO_HAL_ES8388_DEFAULT();
-    cfg.hal = audio_hal_init(&audio_hal_codec_cfg, 0);
+
+
+    audio_board_handle_t board_handle = audio_board_init();
+    cfg.hal = board_handle->audio_hal;
     cfg.evt_que = xQueueCreate(3, sizeof(esp_audio_state_t));
-    audio_hal_ctrl_codec(cfg.hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+    audio_hal_ctrl_codec(cfg.hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
     player = esp_audio_create(&cfg);
     xTaskCreate(esp_audio_state_task, "player_task", 4096, cfg.evt_que, 1, NULL);
 
@@ -398,8 +443,8 @@ void app_main(void)
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PHERIPH_SET_CONFIG();
+    set = esp_periph_set_init(&periph_cfg);
 
     cli_setup_sdcard();
     cli_setup_wifi();

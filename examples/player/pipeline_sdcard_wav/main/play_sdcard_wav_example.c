@@ -16,7 +16,6 @@
 #include "audio_pipeline.h"
 #include "audio_event_iface.h"
 #include "audio_common.h"
-#include "audio_hal.h"
 #include "fatfs_stream.h"
 #include "i2s_stream.h"
 #include "wav_decoder.h"
@@ -35,27 +34,26 @@ void app_main(void)
 
     ESP_LOGI(TAG, "[ 1 ] Mount sdcard");
     // Initialize peripherals management
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PHERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     // Initialize SD Card peripheral
     periph_sdcard_cfg_t sdcard_cfg = {
         .root = "/sdcard",
-        .card_detect_pin = SD_CARD_INTR_GPIO, //GPIO_NUM_34
+        .card_detect_pin = get_sdcard_intr_gpio(), //GPIO_NUM_34
     };
     esp_periph_handle_t sdcard_handle = periph_sdcard_init(&sdcard_cfg);
     // Start sdcard & button peripheral
-    esp_periph_start(sdcard_handle);
+    esp_periph_start(set, sdcard_handle);
 
-    // Wait until sdcard was mounted
+    // Wait until sdcard is mounted
     while (!periph_sdcard_is_mounted(sdcard_handle)) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     ESP_LOGI(TAG, "[ 2 ] Start codec chip");
-    audio_hal_codec_config_t audio_hal_codec_cfg =  AUDIO_HAL_ES8388_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 0);
-    audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+    audio_board_handle_t board_handle = audio_board_init();
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[3.0] Create audio pipeline for playback");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
@@ -85,11 +83,11 @@ void app_main(void)
     ESP_LOGI(TAG, "[3.5] Link it together [sdcard]-->fatfs_stream-->wav_decoder-->i2s_stream-->[codec_chip]");
     audio_pipeline_link(pipeline, (const char *[]) {"file", "wav", "i2s"}, 3);
 
-    ESP_LOGI(TAG, "[3.6] Setup uri (file as fatfs_stream, wav as wav decoder, and default output is i2s)");
+    ESP_LOGI(TAG, "[3.6] Set up  uri (file as fatfs_stream, wav as wav decoder, and default output is i2s)");
     audio_element_set_uri(fatfs_stream_reader, "/sdcard/test.wav");
 
 
-    ESP_LOGI(TAG, "[ 4 ] Setup event listener");
+    ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
     audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
     audio_event_iface_handle_t evt = audio_event_iface_init(&evt_cfg);
 
@@ -97,7 +95,7 @@ void app_main(void)
     audio_pipeline_set_listener(pipeline, evt);
 
     ESP_LOGI(TAG, "[4.2] Listening event from peripherals");
-    audio_event_iface_set_listener(esp_periph_get_event_iface(), evt);
+    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
 
 
     ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
@@ -143,9 +141,9 @@ void app_main(void)
     audio_pipeline_remove_listener(pipeline);
 
     /* Stop all periph before removing the listener */
-    esp_periph_stop_all();
+    esp_periph_set_stop_all(set);
 
-    audio_event_iface_remove_listener(esp_periph_get_event_iface(), evt);
+    audio_event_iface_remove_listener(esp_periph_set_get_event_iface(set), evt);
 
     /* Make sure audio_pipeline_remove_listener & audio_event_iface_remove_listener are called before destroying event_iface */
     audio_event_iface_destroy(evt);
@@ -155,5 +153,5 @@ void app_main(void)
     audio_element_deinit(fatfs_stream_reader);
     audio_element_deinit(i2s_stream_writer);
     audio_element_deinit(wav_decoder);
-    esp_periph_destroy();
+    esp_periph_set_destroy(set);
 }

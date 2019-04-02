@@ -32,7 +32,7 @@ INPUT = \
     ../../components/audio_stream/include/http_stream.h \
     ../../components/audio_stream/include/i2s_stream.h \
     ../../components/audio_stream/include/raw_stream.h \
-	../../components/audio_stream/include/spiffs_stream.h \
+    ../../components/audio_stream/include/spiffs_stream.h \
     ## ESP Codec
     ../../components/esp-adf-libs/esp_codec/include/codec/esp_decoder.h \
     ../../components/esp-adf-libs/esp_codec/include/codec/audio_type_def.h \
@@ -57,14 +57,21 @@ INPUT = \
     ../../components/esp-adf-libs/esp_codec/include/codec/auto_opus_dec.h \
     ../../components/esp-adf-libs/esp_codec/include/codec/auto_wav_dec.h \
     ## Audio Processing
-    ../../components/esp-adf-libs/esp_codec/include/codec/downmix.h \
-    ../../components/esp-adf-libs/esp_codec/include/codec/equalizer.h \
-    ../../components/esp-adf-libs/esp_codec/include/codec/filter_resample.h \
+    ../../components/esp-adf-libs/esp_codec/include/processing/wav_head.h \
     ../../components/esp-adf-libs/esp_codec/include/processing/esp_downmix.h \
     ../../components/esp-adf-libs/esp_codec/include/processing/esp_equalizer.h \
     ../../components/esp-adf-libs/esp_codec/include/processing/esp_resample.h \
     ../../components/esp-adf-libs/esp_codec/include/processing/esp_sonic.h \
-    ../../components/esp-adf-libs/esp_codec/include/processing/wav_head.h \
+    ## Audio Processing Wrappers
+    ../../components/esp-adf-libs/esp_codec/include/codec/downmix.h \
+    ../../components/esp-adf-libs/esp_codec/include/codec/equalizer.h \
+    ../../components/esp-adf-libs/esp_codec/include/codec/filter_resample.h \
+    ../../components/esp-adf-libs/esp_codec/include/codec/audio_sonic.h \
+    ## Speech Recognitions
+    ../../components/esp-adf-libs/esp_sr/include/esp_sr_iface.h \
+    ../../components/esp-adf-libs/esp_sr/include/esp_sr_models.h \
+    ../../components/esp-adf-libs/esp_sr/include/esp_vad.h \
+    ../../components/esp-adf-libs/recorder_engine/include/recorder_engine.h \
     ## ESP Audio
     ../../components/esp-adf-libs/esp_audio/include/audio_def.h \
     ../../components/esp-adf-libs/esp_audio/include/esp_audio.h \
@@ -80,7 +87,7 @@ INPUT = \
     ../../components/esp_peripherals/include/periph_is31fl3216.h \
     ../../components/esp_peripherals/include/periph_adc_button.h \
     ## Audio HAL
-    ../../components/audio_hal/board/board.h \
+    ../../components/audio_hal/board/include/board.h \
     ../../components/audio_hal/driver/es8388/es8388.h \
     ../../components/audio_hal/driver/es8374/es8374.h \
     ../../components/audio_hal/driver/zl38063/zl38063.h \
@@ -91,6 +98,10 @@ INPUT = \
     ## Services
     ../../components/audio_service/include/bluetooth_service.h \
     ../../components/audio_service/include/bt_keycontrol.h \
+    ## Deamon framwork
+    ../../components/esp_deamon/include/periph_service.h \
+    ../../components/esp_deamon/include/audio_service.h \
+    ../../components/display_service/include/display_service.h \
     ## Cloud Services
     ##
     ## Audio Player

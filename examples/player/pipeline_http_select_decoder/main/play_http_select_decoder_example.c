@@ -14,7 +14,6 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-#include "sdkconfig.h"
 #include "audio_element.h"
 #include "audio_pipeline.h"
 #include "audio_event_iface.h"
@@ -24,27 +23,46 @@
 
 #include "esp_peripherals.h"
 #include "periph_wifi.h"
-#include "audio_hal.h"
+#include "board.h"
 
 #define SELECT_AAC_DECODER 1
 
-#if defined SELECT_MP3_DECODER
-#include "mp3_decoder.h"
-    static const char *TAG = "HTTP_SELECT_MP3_EXAMPLE";
-    static const char *selected_decoder_name = "mp3";
-#elif defined SELECT_AAC_DECODER
+#if defined SELECT_AAC_DECODER
 #include "aac_decoder.h"
-    static const char *TAG = "HTTP_SELECT_AAC_EXAMPLE";
-    static const char *selected_decoder_name = "aac";
+static const char *TAG = "HTTP_SELECT_AAC_EXAMPLE";
+static const char *selected_decoder_name = "aac";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac";
 #elif defined SELECT_AMR_DECODER
 #include "amr_decoder.h"
-    static const char *TAG = "HTTP_SELECT_AMR_EXAMPLE";
-    static const char *selected_decoder_name = "amr";
-#else  
+static const char *TAG = "HTTP_SELECT_AMR_EXAMPLE";
+static const char *selected_decoder_name = "amr";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-1c-8000hz.amr";
+#elif defined SELECT_FLAC_DECODER
+#include "flac_decoder.h"
+static const char *TAG = "HTTP_SELECT_FLAC_EXAMPLE";
+static const char *selected_decoder_name = "flac";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.flac";
+#elif defined SELECT_MP3_DECODER
+#include "mp3_decoder.h"
+static const char *TAG = "HTTP_SELECT_MP3_EXAMPLE";
+static const char *selected_decoder_name = "mp3";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3";
+#elif defined SELECT_OGG_DECODER
+#include "ogg_decoder.h"
+static const char *TAG = "HTTP_SELECT_OGG_EXAMPLE";
+static const char *selected_decoder_name = "ogg";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.ogg";
+#elif defined SELECT_OPUS_DECODER
+#include "opus_decoder.h"
+static const char *TAG = "HTTP_SELECT_OPUS_EXAMPLE";
+static const char *selected_decoder_name = "opus";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.opus";
+#else
 #include "wav_decoder.h"
-    static const char *TAG = "HTTP_SELECT_WAV_EXAMPLE";
-    static const char *selected_decoder_name = "wav";
-#endif 
+static const char *TAG = "HTTP_SELECT_WAV_EXAMPLE";
+static const char *selected_decoder_name = "wav";
+static const char *selected_file_to_play = "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.wav";
+#endif
 
 
 void app_main(void)
@@ -65,9 +83,8 @@ void app_main(void)
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 
     ESP_LOGI(TAG, "[ 1 ] Start audio codec chip");
-    audio_hal_codec_config_t audio_hal_codec_cfg =  AUDIO_HAL_ES8388_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 0);
-    audio_hal_ctrl_codec(hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+    audio_board_handle_t board_handle = audio_board_init();
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
 
     ESP_LOGI(TAG, "[2.0] Create audio pipeline for playback");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
@@ -80,19 +97,28 @@ void app_main(void)
 
     ESP_LOGI(TAG, "[2.2] Create %s decoder to decode %s file", selected_decoder_name, selected_decoder_name);
 
-#if defined SELECT_MP3_DECODER
-    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
-    selected_decoder = mp3_decoder_init(&mp3_cfg);
-#elif defined SELECT_AAC_DECODER
+#if defined SELECT_AAC_DECODER
     aac_decoder_cfg_t aac_cfg = DEFAULT_AAC_DECODER_CONFIG();
     selected_decoder = aac_decoder_init(&aac_cfg);
 #elif defined SELECT_AMR_DECODER
     amr_decoder_cfg_t amr_cfg = DEFAULT_AMR_DECODER_CONFIG();
     selected_decoder = amr_decoder_init(&amr_cfg);
-#else  
+#elif defined SELECT_FLAC_DECODER
+    flac_decoder_cfg_t flac_cfg = DEFAULT_FLAC_DECODER_CONFIG();
+    selected_decoder = flac_decoder_init(&flac_cfg);
+#elif defined SELECT_MP3_DECODER
+    mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
+    selected_decoder = mp3_decoder_init(&mp3_cfg);
+#elif defined SELECT_OGG_DECODER
+    ogg_decoder_cfg_t ogg_cfg = DEFAULT_OGG_DECODER_CONFIG();
+    selected_decoder = ogg_decoder_init(&ogg_cfg);
+#elif defined SELECT_OPUS_DECODER
+    opus_decoder_cfg_t opus_cfg = DEFAULT_OPUS_DECODER_CONFIG();
+    selected_decoder = decoder_opus_init(&opus_cfg);
+#else
     wav_decoder_cfg_t wav_cfg = DEFAULT_WAV_DECODER_CONFIG();
     selected_decoder = wav_decoder_init(&wav_cfg);
-#endif 
+#endif
 
     ESP_LOGI(TAG, "[2.3] Create i2s stream to write data to codec chip");
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT();
@@ -107,31 +133,22 @@ void app_main(void)
     ESP_LOGI(TAG, "[2.5] Link it together http_stream-->%s_decoder-->i2s_stream-->[codec_chip]", selected_decoder_name);
     audio_pipeline_link(pipeline, (const char *[]) {"http", selected_decoder_name, "i2s"}, 3);
 
-    ESP_LOGI(TAG, "[2.6] Setup uri (http as http_stream, %s as %s_decoder, and default output is i2s)",
-            selected_decoder_name, selected_decoder_name);
-
-#if defined SELECT_MP3_DECODER
-    audio_element_set_uri(http_stream_reader, "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3");
-#elif defined SELECT_AAC_DECODER
-    audio_element_set_uri(http_stream_reader, "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.aac");
-#elif defined SELECT_AMR_DECODER
-    audio_element_set_uri(http_stream_reader, "https://dl.espressif.com/dl/audio/ff-16b-1c-8000hz.amr");
-#else  
-    audio_element_set_uri(http_stream_reader, "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.wav");
-#endif 
+    ESP_LOGI(TAG, "[2.6] Set up  uri (http as http_stream, %s as %s_decoder, and default output is i2s)",
+             selected_decoder_name, selected_decoder_name);
+    audio_element_set_uri(http_stream_reader, selected_file_to_play);
 
     ESP_LOGI(TAG, "[ 3 ] Start and wait for Wi-Fi network");
-    esp_periph_config_t periph_cfg = { 0 };
-    esp_periph_init(&periph_cfg);
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PHERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
     periph_wifi_cfg_t wifi_cfg = {
         .ssid = CONFIG_WIFI_SSID,
         .password = CONFIG_WIFI_PASSWORD,
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
-    esp_periph_start(wifi_handle);
+    esp_periph_start(set, wifi_handle);
     periph_wifi_wait_for_connected(wifi_handle, portMAX_DELAY);
 
-    ESP_LOGI(TAG, "[ 4 ] Setup event listener");
+    ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
     audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
     audio_event_iface_handle_t evt = audio_event_iface_init(&evt_cfg);
 
@@ -139,7 +156,7 @@ void app_main(void)
     audio_pipeline_set_listener(pipeline, evt);
 
     ESP_LOGI(TAG, "[4.2] Listening event from peripherals");
-    audio_event_iface_set_listener(esp_periph_get_event_iface(), evt);
+    audio_event_iface_set_listener(esp_periph_set_get_event_iface(set), evt);
 
     ESP_LOGI(TAG, "[ 5 ] Start audio_pipeline");
     audio_pipeline_run(pipeline);
@@ -184,8 +201,8 @@ void app_main(void)
     audio_pipeline_remove_listener(pipeline);
 
     /* Stop all peripherals before removing the listener */
-    esp_periph_stop_all();
-    audio_event_iface_remove_listener(esp_periph_get_event_iface(), evt);
+    esp_periph_set_stop_all(set);
+    audio_event_iface_remove_listener(esp_periph_set_get_event_iface(set), evt);
 
     /* Make sure audio_pipeline_remove_listener & audio_event_iface_remove_listener are called before destroying event_iface */
     audio_event_iface_destroy(evt);
@@ -195,5 +212,5 @@ void app_main(void)
     audio_element_deinit(http_stream_reader);
     audio_element_deinit(i2s_stream_writer);
     audio_element_deinit(selected_decoder);
-    esp_periph_destroy();
+    esp_periph_set_destroy(set);
 }

@@ -26,10 +26,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "led.h"
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
-#include "dueros_task.h"
+#include "dueros_app.h"
 
 void app_main(void)
 {
@@ -41,6 +40,5 @@ void app_main(void)
         err = nvs_flash_init();
     }
     tcpip_adapter_init();
-    led_indicator_init();
-    duer_service_create();
+    duer_app_init();
 }
