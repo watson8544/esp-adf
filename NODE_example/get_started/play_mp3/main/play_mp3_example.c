@@ -34,7 +34,7 @@
 
 #include "esp32_digital_led_lib.h"
 
-#define CONFIG_ESP_M5CORE_NODE_BOARD 1
+// #define CONFIG_ESP_M5CORE_NODE_BOARD 1
 
 #define HIGH 1
 #define LOW 0
@@ -187,8 +187,7 @@ static esp_err_t i2c_example_master_read_slave(i2c_port_t i2c_num)
 		float temp = temp_h + temp_l / 10;
 		float humi = humi_h + humi_l / 10;
 			
-        ESP_LOGI(TAG, "温度: %0.2f 摄氏度", temp);
-        ESP_LOGI(TAG, "湿度: %0.2f ", humi);
+        printf("温度: %0.2f 摄氏度, 湿度: %0.2f \n", temp, humi);
     }
 	else
     {
@@ -229,18 +228,6 @@ void app_main(void)
     esp_log_level_set("*", ESP_LOG_WARN);
     esp_log_level_set(TAG, ESP_LOG_INFO);
     // ESP_LOGI(TAG, "[ 1 ] Start audio codec chip");
-#if CONFIG_ESP_LYRAT_V4_3_BOARD
-    audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_ES8388_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 0);
-#endif
-#if CONFIG_ESP_LYRAT_V4_2_BOARD
-    audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_ES8374_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 1);
-#endif
-#if (CONFIG_ESP_LYRATD_MSC_V2_1_BOARD || CONFIG_ESP_LYRATD_MSC_V2_2_BOARD)
-    audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_ZL38063_DEFAULT();
-    audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 2);
-#endif
 #if CONFIG_ESP_M5CORE_NODE_BOARD
     audio_hal_codec_config_t audio_hal_codec_cfg = AUDIO_HAL_WM8978_DEFAULT();//for NODE Module supplied by M5Stack
     audio_hal_handle_t hal = audio_hal_init(&audio_hal_codec_cfg, 3);
@@ -361,18 +348,19 @@ void app_main(void)
     io_conf.pull_up_en = 1;
     gpio_config(&io_conf);
 
-    ESP_LOGI(TAG, " ");
-    ESP_LOGI(TAG, " ");
-    ESP_LOGI(TAG, "开始测试 RGB 温湿度传感器 红外接收管....");
-    printf("I2C timeout  开始\n");
-    ESP_LOGI(TAG, " ");
-    ESP_LOGI(TAG, " ");
+    printf("\n");
+    printf("\n");
+    printf("开始测试 RGB 温湿度传感器 红外接收管....\n");
+    printf("\n");
+    printf("\n");
+
     while(1){
         // ESP_LOGI(TAG, "button c status: %d", gpio_get_level(GPIO_INPUT_IO_0));
         if(!gpio_get_level(GPIO_INPUT_IO_0))
         {
             //pressed
-            ESP_LOGI(TAG, "1. 测试 RGB 和 温湿度传感器");
+            printf("\n");
+            printf("测试 RGB 和 温湿度传感器\n");
             set_white_color();
             i2c_example_master_read_slave(I2C_EXAMPLE_MASTER_NUM);
             
@@ -383,7 +371,7 @@ void app_main(void)
             set_black_color();
             if(!gpio_get_level(GPIO_INPUT_IO_2))
             {
-                ESP_LOGI(TAG, "2. 接收到红外");
+                printf("接收到红外\n");
             }
             // else{
             //     ESP_LOGI(TAG, "不能接收到红外");

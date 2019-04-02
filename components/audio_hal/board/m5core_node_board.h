@@ -49,12 +49,6 @@ extern "C" {
 // #define GPIO_PA_EN                  GPIO_NUM_21
 // #define GPIO_SEL_PA_EN              GPIO_SEL_21
 
-/* Press button related */
-// #define GPIO_SEL_REC                GPIO_SEL_36    //SENSOR_VP
-// #define GPIO_SEL_MODE               GPIO_SEL_39    //SENSOR_VN
-// #define GPIO_REC                    GPIO_NUM_36
-// #define GPIO_MODE                   GPIO_NUM_39
-
 // #define BUTTON_A                    GPIO_NUM_39
 // #define BUTTON_B                   GPIO_NUM_38
 // #define BUTTON_C                   GPIO_NUM_37
@@ -73,6 +67,12 @@ extern "C" {
 #define TOUCH_SEL_SET               TOUCH_PAD_SEL39
 #define TOUCH_SEL_PLAY              TOUCH_PAD_SEL38
 #define TOUCH_SEL_VOLUP             TOUCH_PAD_SEL37
+
+/* Press button related */ 
+#define GPIO_SEL_REC                GPIO_SEL_37    //SENSOR_VP
+#define GPIO_SEL_MODE               GPIO_SEL_38    //SENSOR_VN
+#define GPIO_REC                    GPIO_NUM_37
+#define GPIO_MODE                   GPIO_NUM_38
 
 #define TOUCH_SET                   TOUCH_PAD_NUM39
 #define TOUCH_PLAY                  TOUCH_PAD_NUM38
