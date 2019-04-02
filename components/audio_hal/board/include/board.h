@@ -44,6 +44,18 @@ extern "C" {
         },                                              \
 };
 
+#define AUDIO_HAL_WM8978_DEFAULT(){                   \
+        .adc_input  = AUDIO_HAL_ADC_INPUT_ALL,        \
+        .dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1,         \
+        .codec_mode = AUDIO_HAL_CODEC_MODE_BOTH,        \
+        .i2s_iface = {                                  \
+            .mode = AUDIO_HAL_MODE_SLAVE,               \
+            .fmt = AUDIO_HAL_I2S_NORMAL,                \
+            .samples = AUDIO_HAL_48K_SAMPLES,           \
+            .bits = AUDIO_HAL_BIT_LENGTH_16BITS,        \
+        },                                              \
+};
+
 extern audio_hal_func_t AUDIO_CODEC_DEFAULT_HANDLE;
 
 /**
