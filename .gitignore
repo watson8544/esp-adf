@@ -38,3 +38,6 @@ docs/*/doxygen_sqlite3.db
 *.gcno
 coverage.info
 coverage_report/
+
+# vscode
+.vscode/*

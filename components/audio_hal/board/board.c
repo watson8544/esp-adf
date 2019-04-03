@@ -36,13 +36,18 @@ audio_board_handle_t audio_board_init(void)
         ESP_LOGW(TAG, "The board has already been initialized!");
         return board_handle;
     }
+#ifdef CONFIG_ESP_M5CORE_NODE_BOARD
     audio_hal_codec_config_t audio_codec_cfg = AUDIO_HAL_WM8978_DEFAULT();
-    // audio_hal_codec_config_t audio_codec_cfg = AUDIO_BOARD_DEFAULT_CONFIG();
+#elif
+    audio_hal_codec_config_t audio_codec_cfg = AUDIO_BOARD_DEFAULT_CONFIG();
+#endif
     board_handle = (audio_board_handle_t) audio_calloc(1, sizeof(audio_hal_handle_t));
     AUDIO_MEM_CHECK(TAG, board_handle, return NULL);
-
+#ifdef CONFIG_ESP_M5CORE_NODE_BOARD
     board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_WM8978_HANDLE);
-    // board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_DEFAULT_HANDLE);
+#elfif
+    board_handle->audio_hal = audio_hal_init(&audio_codec_cfg, &AUDIO_CODEC_DEFAULT_HANDLE);
+#endif
 
     return board_handle;
 }
