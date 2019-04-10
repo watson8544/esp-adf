@@ -22,6 +22,8 @@
 #include "filter_resample.h"
 #include "board.h"
 
+#define CONFIG_ESP_M5CORE_NODE_BOARD
+
 static const char *TAG = "PLAY_MP3_FLASH";
 /*
    To embed it in the app binary, the mp3 file is named
